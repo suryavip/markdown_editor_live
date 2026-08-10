@@ -94,14 +94,14 @@ Try typing here!
                   });
                 },
                 onLinkTap: (url) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Link tapped: $url')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Link tapped: $url')));
                 },
                 onImageTap: (url) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Image tapped: $url')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Image tapped: $url')));
                 },
                 style: const TextStyle(fontSize: 16, height: 1.2),
                 decoration: const InputDecoration(

@@ -83,6 +83,32 @@ MarkdownEditor(
 )
 ```
 
+### Customizing Markdown Element Styles
+
+Pass a `MarkdownStyles` to restyle individual markdown elements. Anything you
+omit keeps its default; anything you provide replaces that element's default.
+
+```dart
+MarkdownEditor(
+  markdownStyles: MarkdownStyles(
+    h1: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900),
+    bold: const TextStyle(fontWeight: FontWeight.w800),
+    link: const TextStyle(color: Colors.teal, decoration: TextDecoration.underline),
+    inlineCode: const TextStyle(fontFamily: 'monospace', color: Colors.deepOrange),
+  ),
+)
+
+// or directly on the controller (can be reassigned at runtime):
+final controller = MarkdownEditingController(
+  styles: MarkdownStyles(h2: const TextStyle(fontSize: 22)),
+);
+controller.styles = controller.styles.copyWith(italic: const TextStyle(fontStyle: FontStyle.italic, color: Colors.purple));
+```
+
+Available styles: `h1`–`h6`, `bold`, `italic`, `strikethrough`, `inlineCode`,
+`codeBlock`, `link`, `linkUrl`, `image`, `list`, `listMarker`,
+`listMarkerFocused`, `thematicBreak`, `imageError`.
+
 ### Image Tap Handling
 
 You can handle image taps using the `onImageTap` callback:
@@ -120,6 +146,7 @@ MarkdownEditor(
 | `onImageTap`   | `void Function(String url)?` | `null` | Callback fired when an image is tapped. Receives the image URL as parameter. |
 | `style`        | `TextStyle?`              | `null`  | Text style for the editor                            |
 | `decoration`   | `InputDecoration?`        | `null`  | Input decoration for the TextField                   |
+| `markdownStyles` | `MarkdownStyles?`       | `null`  | Per-element text styles (headings, links, code, ...) |
 | `useSoftTabs`  | `bool`                    | `true`  | Use spaces instead of tab characters                 |
 | `tabWidth`     | `int`                     | `2`     | Number of spaces per soft tab                        |
 

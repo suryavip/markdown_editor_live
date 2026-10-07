@@ -1,3 +1,7 @@
+## Unreleased
+
+- **Added**: `MarkdownStyles` to customize the text style of every markdown element (headings, bold, italic, strikethrough, code, links, lists, thematic breaks, image error placeholder). Pass it as `MarkdownEditingController(styles: ...)` or `MarkdownEditor(markdownStyles: ...)`. Defaults are unchanged.
+
 ## 0.6.0
 
 - **Fixed**: Markdown rendering now shows rendered result when textfield is unfocused (previously showed raw syntax)

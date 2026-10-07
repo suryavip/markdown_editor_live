@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'markdown_styles.dart';
 import 'markdown_text_editing_controller.dart';
 
 class MarkdownEditor extends StatefulWidget {
@@ -17,6 +18,10 @@ class MarkdownEditor extends StatefulWidget {
   /// Defaults to 5 lines to maintain backward compatibility.
   final int imageHeightLines;
 
+  /// The text styles used for each markdown element.
+  /// Uses the built-in defaults when null.
+  final MarkdownStyles? markdownStyles;
+
   const MarkdownEditor({
     super.key,
     this.initialValue,
@@ -28,6 +33,7 @@ class MarkdownEditor extends StatefulWidget {
     this.useSoftTabs = true,
     this.tabWidth = 2,
     this.imageHeightLines = 5,
+    this.markdownStyles,
   });
 
   @override
@@ -49,10 +55,19 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       onLinkTap: widget.onLinkTap,
       onImageTap: widget.onImageTap,
       imageHeightLines: widget.imageHeightLines,
+      styles: widget.markdownStyles,
     );
     _controller.addListener(_onSelectionChanged);
     _focusNode = FocusNode();
     _focusNode.addListener(_onFocusChanged);
+  }
+
+  @override
+  void didUpdateWidget(MarkdownEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.markdownStyles != oldWidget.markdownStyles) {
+      _controller.styles = widget.markdownStyles ?? MarkdownStyles();
+    }
   }
 
   void _onFocusChanged() {

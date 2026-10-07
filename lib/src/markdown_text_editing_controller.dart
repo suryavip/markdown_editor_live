@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
 
+import 'markdown_styles.dart';
+
 class MarkdownEditingController extends TextEditingController {
   MarkdownEditingController({
     super.text,
     this.onLinkTap,
     this.onImageTap,
     this.imageHeightLines = 5,
-  }) : assert(imageHeightLines > 0, 'imageHeightLines must be positive') {
+    MarkdownStyles? styles,
+  }) : _styles = styles ?? MarkdownStyles(),
+       assert(imageHeightLines > 0, 'imageHeightLines must be positive') {
     _sourceText = super.text;
     // Add virtual newlines for image spacing on initial text
     _updateTextWithNewlines();
+  }
+
+  MarkdownStyles _styles;
+
+  /// The text styles used for each markdown element.
+  /// Changing this rebuilds the text field.
+  MarkdownStyles get styles => _styles;
+
+  set styles(MarkdownStyles value) {
+    if (identical(_styles, value)) return;
+    _styles = value;
+    notifyListeners();
   }
 
   /// Called when a link is tapped. Receives the URL as a string.
@@ -195,7 +211,7 @@ class MarkdownEditingController extends TextEditingController {
       ),
       child: Text(
         altText.isNotEmpty ? altText : 'Image not found',
-        style: const TextStyle(fontSize: 12, color: Colors.grey),
+        style: _styles.imageError,
       ),
     );
   }
@@ -418,89 +434,75 @@ class MarkdownEditingController extends TextEditingController {
     // Pattern definitions
     final patterns = <_MarkdownPattern>[
       // Headers: show # only on focused line
-      _MarkdownPattern(RegExp(r'^(#{1,6}\s+)(.*)$', multiLine: true), (match) {
-        final headingLevel = match.group(1)!.trim().length;
-        final fontSizes = [28.0, 24.0, 20.0, 18.0, 16.0, 14.0];
-        final fontSize = fontSizes[headingLevel.clamp(1, 6) - 1];
-        return TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: fontSize,
-          color: Colors.blueAccent,
-        );
-      }, type: _PatternType.header),
+      _MarkdownPattern(
+        RegExp(r'^(#{1,6}\s+)(.*)$', multiLine: true),
+        (match) => styles.headingStyle(match.group(1)!.trim().length),
+        type: _PatternType.header,
+      ),
       // Unordered List
       _MarkdownPattern(
         RegExp(r'^([ \t]*)([*+-])([ \t]+)', multiLine: true),
-        (match) => const TextStyle(fontWeight: FontWeight.w500),
+        (match) => styles.list,
         type: _PatternType.list,
       ),
       // Ordered List
       _MarkdownPattern(
         RegExp(r'^([ \t]*)(\d+\.)([ \t]+)', multiLine: true),
-        (match) => const TextStyle(fontWeight: FontWeight.w500),
+        (match) => styles.list,
         type: _PatternType.list,
       ),
       // Bold **text**
       _MarkdownPattern(
         RegExp(r'(\*\*)(.+?)(\*\*)'),
-        (match) => const TextStyle(fontWeight: FontWeight.bold),
+        (match) => styles.bold,
         type: _PatternType.inline,
       ),
       // Bold __text__
       _MarkdownPattern(
         RegExp(r'(__)(.+?)(__)'),
-        (match) => const TextStyle(fontWeight: FontWeight.bold),
+        (match) => styles.bold,
         type: _PatternType.inline,
       ),
       // Italic *text*
       _MarkdownPattern(
         RegExp(r'(\*)(.+?)(\*)'),
-        (match) => const TextStyle(fontStyle: FontStyle.italic),
+        (match) => styles.italic,
         type: _PatternType.inline,
       ),
       // Italic _text_
       _MarkdownPattern(
         RegExp(r'(_)(.+?)(_)'),
-        (match) => const TextStyle(fontStyle: FontStyle.italic),
+        (match) => styles.italic,
         type: _PatternType.inline,
       ),
       // Strikethrough ~~text~~
       _MarkdownPattern(
         RegExp(r'(~~)(.+?)(~~)'),
-        (match) => const TextStyle(decoration: TextDecoration.lineThrough),
+        (match) => styles.strikethrough,
         type: _PatternType.inline,
       ),
       // Inline code `text`
       _MarkdownPattern(
         RegExp(r'(`)([^`]+)(`)'),
-        (match) => TextStyle(
-          fontFamily: 'monospace',
-          backgroundColor: Colors.grey.shade200.withValues(alpha: 0.5),
-        ),
+        (match) => styles.inlineCode,
         type: _PatternType.inline,
       ),
       // Block code ```text```
       _MarkdownPattern(
         RegExp(r'(```)([\s\S]*?)(```)'),
-        (match) => TextStyle(
-          fontFamily: 'monospace',
-          backgroundColor: Colors.grey.shade200.withValues(alpha: 0.5),
-        ),
+        (match) => styles.codeBlock,
         type: _PatternType.inline,
       ),
       // Links [text](url)
       _MarkdownPattern(
         RegExp(r'(\[)([^\]]+)(\]\()([^\)]+)(\))'),
-        (match) => const TextStyle(
-          color: Colors.blue,
-          decoration: TextDecoration.underline,
-        ),
+        (match) => styles.link,
         type: _PatternType.link,
       ),
       // Images ![alt text](url)
       _MarkdownPattern(
         _imagePattern,
-        (match) => const TextStyle(),
+        (match) => styles.image,
         type: _PatternType.image,
       ),
       // Thematic break
@@ -509,7 +511,7 @@ class MarkdownEditingController extends TextEditingController {
           r'^ {0,3}((\*[ \t]*){3,}|(-[ \t]*){3,}|(_[ \t]*){3,})$',
           multiLine: true,
         ),
-        (match) => const TextStyle(color: Colors.grey),
+        (match) => styles.thematicBreak,
         type: _PatternType.thematicBreak,
         priority: 1,
       ),
@@ -572,7 +574,7 @@ class MarkdownEditingController extends TextEditingController {
             matchSpans.add(
               TextSpan(
                 text: bulletOrNumber + space,
-                style: combinedStyle.copyWith(color: Colors.blueAccent),
+                style: combinedStyle.merge(styles.listMarkerFocused),
               ),
             );
           } else {
@@ -582,17 +584,14 @@ class MarkdownEditingController extends TextEditingController {
             matchSpans.add(
               TextSpan(
                 text: replacement + space,
-                style: combinedStyle.copyWith(fontWeight: FontWeight.bold),
+                style: combinedStyle.merge(styles.listMarker),
               ),
             );
           }
         } else if (pattern.type == _PatternType.thematicBreak) {
           if (isOnFocusedLine) {
             matchSpans.add(
-              TextSpan(
-                text: match.group(0),
-                style: combinedStyle.copyWith(color: Colors.grey),
-              ),
+              TextSpan(text: match.group(0), style: combinedStyle),
             );
           } else {
             final lineLength = match.group(0)!.length;
@@ -600,10 +599,7 @@ class MarkdownEditingController extends TextEditingController {
             matchSpans.add(
               TextSpan(
                 text: lineChars,
-                style: combinedStyle.copyWith(
-                  color: Colors.grey,
-                  letterSpacing: 0,
-                ),
+                style: combinedStyle.copyWith(letterSpacing: 0),
               ),
             );
           }
@@ -629,7 +625,7 @@ class MarkdownEditingController extends TextEditingController {
             matchSpans.add(
               TextSpan(
                 text: url,
-                style: linkStyle.copyWith(color: Colors.blue.shade300),
+                style: linkStyle.merge(styles.linkUrl),
               ),
             );
             matchSpans.add(TextSpan(text: closeParen, style: linkStyle));
@@ -657,7 +653,7 @@ class MarkdownEditingController extends TextEditingController {
             matchSpans.add(
               TextSpan(
                 text: url,
-                style: combinedStyle.copyWith(color: Colors.blue.shade300),
+                style: combinedStyle.merge(styles.linkUrl),
               ),
             );
             matchSpans.add(TextSpan(text: closeParen, style: combinedStyle));

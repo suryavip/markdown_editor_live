@@ -55,7 +55,10 @@ class MarkdownEditingController extends TextEditingController {
         _sourceText = _removeVirtualNewlines(super.text);
       }
       // Map display offset to source offset first, then calculate line number from source text
-      final sourceOffset = _displayToSourceOffset(selection.baseOffset, super.text);
+      final sourceOffset = _displayToSourceOffset(
+        selection.baseOffset,
+        super.text,
+      );
       focusedLine = _getLineNumber(sourceOffset, _sourceText);
     }
   }
@@ -176,7 +179,9 @@ class MarkdownEditingController extends TextEditingController {
       );
     } else {
       // Unknown scheme - show error placeholder directly
-      return _buildImageError(altText.isNotEmpty ? altText : 'Unsupported URL: $url');
+      return _buildImageError(
+        altText.isNotEmpty ? altText : 'Unsupported URL: $url',
+      );
     }
   }
 
@@ -248,7 +253,8 @@ class MarkdownEditingController extends TextEditingController {
       buffer.write(cleanText.substring(lastEnd, match.start));
 
       // Check if this image should show raw syntax (on focused line) or rendered widget
-      final bool isOnFocusedLine = focusedLineRange != null &&
+      final bool isOnFocusedLine =
+          focusedLineRange != null &&
           match.start >= focusedLineRange.$1 &&
           match.start < focusedLineRange.$2;
 
@@ -279,13 +285,19 @@ class MarkdownEditingController extends TextEditingController {
     buffer.write(cleanText.substring(lastEnd));
 
     final newText = buffer.toString();
-    
+
     if (super.text != newText) {
       // Preserve cursor position relative to source text
       final oldSelection = selection;
       // Map selection from display to source offsets before text change
-      final sourceBase = _displayToSourceOffset(oldSelection.baseOffset, super.text);
-      final sourceExtent = _displayToSourceOffset(oldSelection.extentOffset, super.text);
+      final sourceBase = _displayToSourceOffset(
+        oldSelection.baseOffset,
+        super.text,
+      );
+      final sourceExtent = _displayToSourceOffset(
+        oldSelection.extentOffset,
+        super.text,
+      );
       super.text = newText;
       // Restore selection with offsets mapped from source to display
       if (oldSelection.isValid) {
@@ -345,8 +357,14 @@ class MarkdownEditingController extends TextEditingController {
     // Map selection from display coordinates (in newValue.text) to source coordinates
     // This is critical because newValue.selection is relative to newValue.text which
     // contains virtual newlines, but we're about to set cleanText which has none.
-    final mappedSourceBase = _displayToSourceOffset(newValue.selection.baseOffset, newValue.text);
-    final mappedSourceExtent = _displayToSourceOffset(newValue.selection.extentOffset, newValue.text);
+    final mappedSourceBase = _displayToSourceOffset(
+      newValue.selection.baseOffset,
+      newValue.text,
+    );
+    final mappedSourceExtent = _displayToSourceOffset(
+      newValue.selection.extentOffset,
+      newValue.text,
+    );
 
     // Update with cleaned text AND mapped selection (source coordinates)
     _isUpdatingText = true;
@@ -356,7 +374,10 @@ class MarkdownEditingController extends TextEditingController {
         extentOffset: mappedSourceExtent.clamp(0, cleanText.length),
         affinity: newValue.selection.affinity,
       );
-      super.value = newValue.copyWith(text: cleanText, selection: sourceSelection);
+      super.value = newValue.copyWith(
+        text: cleanText,
+        selection: sourceSelection,
+      );
       // Always add newlines for image spacing, regardless of focus state
       _updateTextWithNewlinesInternal();
     } finally {
@@ -507,7 +528,10 @@ class MarkdownEditingController extends TextEditingController {
     for (final pattern in patterns) {
       for (final match in pattern.exp.allMatches(displayText)) {
         // Convert display position to source position for accurate line comparison
-        final matchStartSource = _displayToSourceOffset(match.start, displayText);
+        final matchStartSource = _displayToSourceOffset(
+          match.start,
+          displayText,
+        );
         final isOnFocusedLine =
             focusedLineRangeSource != null &&
             matchStartSource >= focusedLineRangeSource.$1 &&
@@ -523,12 +547,7 @@ class MarkdownEditingController extends TextEditingController {
 
         if (pattern.type == _PatternType.virtualNewline) {
           // Hide zero-width markers with zero-size text
-          matchSpans.add(
-            TextSpan(
-              text: match.group(0),
-              style: hiddenStyle,
-            ),
-          );
+          matchSpans.add(TextSpan(text: match.group(0), style: hiddenStyle));
         } else if (pattern.type == _PatternType.header) {
           // Group 1: Syntax (e.g. "# "), Group 2: Content
           final syntax = match.group(1)!;
@@ -657,7 +676,9 @@ class MarkdownEditingController extends TextEditingController {
             // WidgetSpan occupies 1 position, so we need (syntaxLength - 1) more
             final int zwspCount = syntaxLength - 1;
             if (zwspCount > 0) {
-              matchSpans.add(TextSpan(text: '\u200B' * zwspCount, style: hiddenStyle));
+              matchSpans.add(
+                TextSpan(text: '\u200B' * zwspCount, style: hiddenStyle),
+              );
             }
           }
         } else if (pattern.type == _PatternType.inline) {
@@ -740,7 +761,15 @@ class MarkdownEditingController extends TextEditingController {
   }
 }
 
-enum _PatternType { header, list, inline, link, thematicBreak, image, virtualNewline }
+enum _PatternType {
+  header,
+  list,
+  inline,
+  link,
+  thematicBreak,
+  image,
+  virtualNewline,
+}
 
 class _MarkdownPattern {
   final RegExp exp;
